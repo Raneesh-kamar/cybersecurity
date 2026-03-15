@@ -1,0 +1,1572 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+<title>PowerCortex — AI SOC Platform | Power Consultancy</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;600;800&family=Rajdhani:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#020912;--bg2:#030d1a;
+  --blue:#00c8f0;--cyan:#00ffd0;
+  --red:#ff1e3c;--orange:#ff7700;
+  --yellow:#ffd000;--green:#00ff88;
+  --purple:#9b4dff;
+  --text:#b8d8f0;--muted:#3a5570;
+  --mono:'Share Tech Mono',monospace;
+  --hud:'Rajdhani',sans-serif;
+  --display:'Orbitron',sans-serif;
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(--text);font-family:var(--hud);cursor:crosshair;}
+
+/* ── BG ── */
+#bgc{position:fixed;inset:0;z-index:0;pointer-events:none;}
+.scanlines{position:fixed;inset:0;z-index:1;pointer-events:none;
+  background:repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(0,0,0,.035) 3px,rgba(0,0,0,.035) 4px);
+  animation:scan 12s linear infinite;}
+@keyframes scan{from{background-position:0 0}to{background-position:0 200px}}
+.vignette{position:fixed;inset:0;z-index:2;pointer-events:none;
+  background:radial-gradient(ellipse at 50% 50%,transparent 38%,rgba(0,0,0,.72) 100%);}
+
+/* ══════════════════════════════
+   TOP HUD
+══════════════════════════════ */
+#hud{position:fixed;top:0;left:0;right:0;height:52px;z-index:200;
+  display:flex;align-items:center;justify-content:space-between;padding:0 14px;
+  background:linear-gradient(180deg,rgba(0,15,30,.97),rgba(2,9,18,.88));
+  border-bottom:1px solid rgba(0,200,240,.18);backdrop-filter:blur(12px);gap:8px;}
+
+.hud-brand{display:flex;align-items:center;gap:0;flex-shrink:0;}
+.hud-pc{font-family:var(--display);font-size:11px;font-weight:400;color:var(--muted);letter-spacing:3px;}
+.hud-dot{color:var(--blue);margin:0 4px;font-size:14px;}
+.hud-logo{font-family:var(--display);font-size:15px;font-weight:800;
+  color:var(--blue);letter-spacing:3px;text-shadow:0 0 22px rgba(0,200,240,.55);}
+.hud-logo span{color:var(--cyan);}
+.hud-sep{color:var(--muted);margin:0 10px;font-size:16px;flex-shrink:0;}
+.hud-sub{font-size:9px;color:var(--muted);letter-spacing:2px;text-transform:uppercase;white-space:nowrap;}
+
+.hud-mid{display:flex;align-items:center;gap:10px;flex-shrink:0;}
+.thr-wrap{display:flex;align-items:center;gap:8px;}
+.thr-lbl{font-size:8px;color:var(--muted);letter-spacing:2px;white-space:nowrap;}
+.thr-track{width:100px;height:5px;background:rgba(255,255,255,.05);
+  border:1px solid rgba(0,200,240,.15);border-radius:3px;overflow:hidden;}
+.thr-fill{height:100%;width:8%;background:var(--green);border-radius:3px;
+  transition:width 1.2s ease,background 1.2s ease;box-shadow:0 0 8px currentColor;}
+.thr-val{font-family:var(--display);font-size:10px;color:var(--green);
+  letter-spacing:2px;min-width:52px;transition:color .8s;}
+
+.hud-stats{display:flex;gap:14px;align-items:center;flex-shrink:0;}
+.hstat{text-align:center;}
+.hstat-n{display:block;font-family:var(--display);font-size:14px;color:var(--cyan);line-height:1;}
+.hstat-l{font-size:7px;color:var(--muted);letter-spacing:1px;}
+#clock{font-family:var(--mono);font-size:11px;color:var(--blue);letter-spacing:2px;
+  padding:3px 8px;border:1px solid rgba(0,200,240,.2);background:rgba(0,200,240,.04);white-space:nowrap;}
+
+/* ── CONTROLS ── */
+#controls{position:fixed;top:59px;left:50%;transform:translateX(-50%);
+  display:flex;gap:6px;z-index:200;flex-wrap:nowrap;}
+.cbtn{font-family:var(--hud);font-size:9px;font-weight:600;letter-spacing:2px;
+  padding:5px 13px;background:rgba(0,200,240,.05);border:1px solid rgba(0,200,240,.18);
+  color:var(--muted);cursor:pointer;transition:all .25s;text-transform:uppercase;white-space:nowrap;}
+.cbtn:hover,.cbtn.on{background:rgba(0,200,240,.14);border-color:var(--blue);
+  color:var(--blue);box-shadow:0 0 16px rgba(0,200,240,.25);}
+.abtn{font-family:var(--display);font-size:9px;font-weight:600;letter-spacing:2px;
+  padding:5px 16px;background:rgba(255,30,60,.08);border:1px solid rgba(255,30,60,.35);
+  color:var(--red);cursor:pointer;transition:all .25s;text-transform:uppercase;white-space:nowrap;
+  animation:ablink 2.5s ease-in-out infinite;}
+.abtn:hover{background:rgba(255,30,60,.22);box-shadow:0 0 22px rgba(255,30,60,.4);}
+.abtn:disabled{opacity:.4;cursor:not-allowed;animation:none;}
+@keyframes ablink{0%,100%{box-shadow:0 0 5px rgba(255,30,60,.2)}50%{box-shadow:0 0 20px rgba(255,30,60,.5)}}
+
+/* ── STAGE ── */
+#stage{position:fixed;top:52px;left:0;right:0;bottom:38px;z-index:10;}
+#svg{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:5;}
+
+/* ── AI BRAIN (neural net) ── */
+#brain{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
+  width:130px;height:130px;cursor:pointer;z-index:30;}
+#brainCanvas{position:absolute;inset:0;width:100%;height:100%;border-radius:50%;}
+.bglow{position:absolute;inset:-24px;border-radius:50%;
+  background:radial-gradient(circle,rgba(0,200,240,.13) 0%,transparent 65%);
+  animation:bgpulse 3s ease-in-out infinite;pointer-events:none;}
+@keyframes bgpulse{0%,100%{transform:scale(.85);opacity:.5}50%{transform:scale(1.15);opacity:1}}
+.boverlay{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;padding-bottom:12px;z-index:3;pointer-events:none;}
+.btitle{font-family:var(--display);font-size:8px;color:var(--cyan);letter-spacing:3px;}
+.bsub{font-size:7px;color:var(--muted);letter-spacing:1px;margin-top:1px;}
+#brain:hover #brainCanvas{filter:brightness(1.25);}
+
+/* ── NODES ── */
+.node{position:absolute;transform:translate(-50%,-50%);
+  width:100px;height:100px;cursor:pointer;z-index:25;
+  background:linear-gradient(135deg,rgba(3,12,25,.92),rgba(0,18,36,.82));
+  border:1px solid rgba(0,200,240,.2);
+  clip-path:polygon(11px 0%,100% 0%,100% calc(100% - 11px),calc(100% - 11px) 100%,0% 100%,0% 11px);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  transition:all .3s;gap:2px;}
+.node:hover{border-color:var(--blue);transform:translate(-50%,-50%) scale(1.07);
+  box-shadow:0 0 26px rgba(0,200,240,.3),inset 0 0 18px rgba(0,200,240,.06);}
+.node.alert{border-color:var(--red)!important;animation:nalert .45s ease-in-out infinite alternate;}
+.node.busy{border-color:var(--cyan)!important;box-shadow:0 0 22px rgba(0,200,240,.6),inset 0 0 14px rgba(0,200,240,.12);animation:nbusy 0.8s ease-in-out infinite alternate;}
+@keyframes nbusy{from{box-shadow:0 0 12px rgba(0,200,240,.4),inset 0 0 8px rgba(0,200,240,.08)}to{box-shadow:0 0 32px rgba(0,200,240,.85),inset 0 0 18px rgba(0,200,240,.18)}}
+.node.ok{border-color:var(--green)!important;box-shadow:0 0 16px rgba(0,255,136,.3);}
+@keyframes nalert{from{box-shadow:0 0 8px rgba(255,30,60,.25)}to{box-shadow:0 0 30px rgba(255,30,60,.8)}}
+.nicon{font-size:20px;}
+.ntitle{font-family:var(--display);font-size:7.5px;color:var(--cyan);letter-spacing:1px;text-align:center;line-height:1.2;}
+.nsub{font-size:7px;color:var(--muted);text-align:center;line-height:1.3;}
+.nanalyst{font-size:7px;color:rgba(0,255,208,.5);text-align:center;font-family:var(--mono);line-height:1.2;}
+.nbadge{position:absolute;top:4px;right:4px;background:var(--red);color:#fff;
+  font-family:var(--mono);font-size:8px;width:15px;height:15px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity .3s;}
+.nbadge.on{opacity:1;}
+.ndot{position:absolute;bottom:4px;right:4px;width:5px;height:5px;border-radius:50%;
+  background:var(--green);box-shadow:0 0 5px var(--green);animation:dotblink 2s ease-in-out infinite;}
+@keyframes dotblink{0%,100%{opacity:1}50%{opacity:.25}}
+.ndot.red{background:var(--red);box-shadow:0 0 5px var(--red);animation-duration:.35s;}
+.ndot.yellow{background:var(--yellow);box-shadow:0 0 5px var(--yellow);}
+
+/* ── SOURCE NODES ── */
+.src{position:absolute;transform:translate(-50%,-50%);
+  font-family:var(--mono);font-size:8px;color:var(--muted);letter-spacing:1px;
+  padding:3px 7px;border:1px solid rgba(255,255,255,.05);background:rgba(0,0,0,.5);z-index:15;
+  transition:all .4s;white-space:nowrap;}
+.src.lit{color:var(--orange);border-color:rgba(255,119,0,.5);text-shadow:0 0 7px var(--orange);}
+
+/* ══════════════════════════════
+   LOG FEED
+══════════════════════════════ */
+#logfeed{position:absolute;right:10px;top:6px;width:228px;height:188px;
+  background:rgba(2,9,18,.9);border:1px solid rgba(0,200,240,.12);z-index:22;
+  backdrop-filter:blur(6px);}
+.lfhdr{font-family:var(--display);font-size:7.5px;letter-spacing:2px;color:var(--blue);
+  padding:5px 8px;border-bottom:1px solid rgba(0,200,240,.1);background:rgba(0,200,240,.04);}
+#loglines{font-family:var(--mono);font-size:8px;padding:3px 7px;
+  height:calc(100% - 24px);overflow:hidden;display:flex;flex-direction:column-reverse;gap:1px;}
+.ll{line-height:1.45;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.ll.w{color:var(--orange);}
+.ll.c{color:var(--red);animation:llf .3s ease 2;}
+.ll.i{color:var(--cyan);}
+@keyframes llf{0%,100%{opacity:1}50%{opacity:.2}}
+
+/* ══════════════════════════════
+   L1 LIVE TRIAGE PANEL
+══════════════════════════════ */
+#l1triage{position:absolute;left:10px;top:6px;width:228px;
+  background:rgba(2,9,18,.9);border:1px solid rgba(0,200,240,.12);z-index:22;
+  backdrop-filter:blur(6px);}
+.l1hdr{font-family:var(--display);font-size:7.5px;letter-spacing:2px;color:var(--blue);
+  padding:5px 8px;border-bottom:1px solid rgba(0,200,240,.1);background:rgba(0,200,240,.04);
+  display:flex;justify-content:space-between;align-items:center;}
+.l1analyst{font-size:7.5px;color:var(--cyan);font-family:var(--mono);}
+.l1queue{padding:4px 6px;display:flex;flex-direction:column;gap:3px;min-height:60px;}
+.l1item{display:flex;align-items:center;gap:5px;padding:3px 5px;
+  border:1px solid rgba(0,200,240,.07);background:rgba(0,200,240,.02);
+  font-family:var(--mono);font-size:7.5px;animation:l1slide .3s ease;}
+@keyframes l1slide{from{opacity:0;transform:translateX(-8px)}to{opacity:1;transform:translateX(0)}}
+.l1sev{width:28px;text-align:center;font-size:7px;padding:1px 3px;border-radius:2px;flex-shrink:0;}
+.l1sev.c{background:rgba(255,30,60,.25);color:var(--red);}
+.l1sev.h{background:rgba(255,119,0,.25);color:var(--orange);}
+.l1sev.m{background:rgba(255,208,0,.2);color:var(--yellow);}
+.l1sev.l{background:rgba(0,255,136,.15);color:var(--green);}
+.l1msg{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text);}
+.l1act{font-size:7px;flex-shrink:0;padding:1px 4px;border-radius:2px;cursor:pointer;}
+.l1act.esc{background:rgba(255,30,60,.2);color:var(--red);border:1px solid rgba(255,30,60,.3);}
+.l1act.dis{background:rgba(0,255,136,.1);color:var(--green);border:1px solid rgba(0,255,136,.2);}
+.l1act.rev{background:rgba(255,208,0,.1);color:var(--yellow);border:1px solid rgba(255,208,0,.2);}
+.l1stats{display:flex;gap:0;border-top:1px solid rgba(0,200,240,.08);}
+.l1stat{flex:1;text-align:center;padding:4px 2px;border-right:1px solid rgba(0,200,240,.06);}
+.l1stat:last-child{border-right:none;}
+.l1snum{display:block;font-family:var(--display);font-size:13px;color:var(--cyan);}
+.l1slbl{font-size:6.5px;color:var(--muted);letter-spacing:1px;}
+.fp-bar{height:3px;background:rgba(255,255,255,.04);margin:2px 6px 4px;border-radius:2px;overflow:hidden;}
+.fp-fill{height:100%;background:linear-gradient(90deg,var(--green),var(--cyan));border-radius:2px;width:94%;transition:width 2s ease;}
+
+/* ══════════════════════════════
+   MITRE
+══════════════════════════════ */
+#mitre{position:absolute;left:10px;bottom:4px;width:272px;
+  background:rgba(2,9,18,.9);border:1px solid rgba(0,200,240,.12);z-index:22;padding:7px;
+  backdrop-filter:blur(6px);}
+.mhdr{font-family:var(--display);font-size:7.5px;letter-spacing:2px;color:var(--blue);margin-bottom:5px;}
+.mtactics{display:flex;gap:2px;margin-bottom:3px;}
+.mtac{flex:1;font-size:5.5px;color:var(--muted);text-align:center;padding:2px 0;
+  background:rgba(0,200,240,.03);border:1px solid rgba(0,200,240,.07);line-height:1.2;}
+#mgrid{display:grid;grid-template-columns:repeat(11,1fr);gap:2px;}
+.mc{height:11px;background:rgba(255,255,255,.02);border:1px solid rgba(0,200,240,.06);
+  border-radius:1px;cursor:default;transition:all .4s;}
+.mc.hot{background:rgba(255,30,60,.45)!important;border-color:var(--red);
+  box-shadow:0 0 5px rgba(255,30,60,.5);animation:mcpulse .9s ease-in-out infinite;}
+.mc.seen{background:rgba(255,119,0,.2);border-color:var(--orange);}
+@keyframes mcpulse{0%,100%{opacity:1}50%{opacity:.5}}
+
+/* ── KILL CHAIN ── */
+#kc{position:absolute;right:10px;bottom:4px;width:286px;
+  background:rgba(2,9,18,.9);border:1px solid rgba(0,200,240,.12);z-index:22;padding:7px;
+  backdrop-filter:blur(6px);opacity:0;transition:opacity .6s;}
+#kc.on{opacity:1;}
+.kchdr{font-family:var(--display);font-size:7.5px;letter-spacing:2px;color:var(--blue);margin-bottom:6px;}
+#kcstages{display:flex;gap:2px;}
+.kcs{flex:1;padding:5px 2px;text-align:center;font-family:var(--mono);font-size:6px;
+  background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.05);
+  color:var(--muted);border-radius:2px;transition:all .5s;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.kcs.go{background:rgba(255,30,60,.28);border-color:var(--red);color:var(--red);box-shadow:0 0 7px rgba(255,30,60,.4);}
+.kcs.done{background:rgba(255,119,0,.18);border-color:var(--orange);color:var(--orange);}
+
+/* ══════════════════════════════
+   RISK GAUGE
+══════════════════════════════ */
+#risk{position:absolute;left:50%;top:30%;transform:translate(-50%,-50%);z-index:22;pointer-events:none;}
+#risk svg text{font-family:var(--display);}
+@media(max-width:768px){#risk{position:relative;top:auto;left:auto;transform:none;}}
+
+/* ══════════════════════════════
+   DETAIL PANEL
+══════════════════════════════ */
+#overlay{position:fixed;inset:0;z-index:300;background:rgba(0,0,0,0);pointer-events:none;transition:background .3s;}
+#overlay.on{background:rgba(0,0,0,.58);pointer-events:all;}
+#panel{position:fixed;right:-520px;top:52px;bottom:38px;width:480px;z-index:400;
+  background:linear-gradient(180deg,rgba(3,12,25,.99),rgba(2,8,18,.99));
+  border-left:1px solid rgba(0,200,240,.28);overflow-y:auto;
+  transition:right .42s cubic-bezier(.25,.46,.45,.94);backdrop-filter:blur(20px);}
+#panel.on{right:0;}
+.pclose{position:sticky;top:0;float:right;margin:10px 10px 0 0;
+  background:rgba(255,30,60,.08);border:1px solid rgba(255,30,60,.28);
+  color:var(--red);font-size:13px;width:26px;height:26px;cursor:pointer;transition:all .2s;z-index:10;}
+.pclose:hover{background:rgba(255,30,60,.28);}
+#pcontent{padding:16px;clear:both;}
+.ptitle{font-family:var(--display);font-size:16px;color:var(--cyan);letter-spacing:3px;margin-bottom:4px;}
+.psub{font-size:10px;color:var(--muted);letter-spacing:2px;margin-bottom:16px;}
+.pdiv{border:none;border-top:1px solid rgba(0,200,240,.09);margin:13px 0;}
+.psect{font-family:var(--display);font-size:8.5px;color:var(--blue);letter-spacing:2px;margin-bottom:8px;}
+.ptext{font-size:12px;color:var(--text);line-height:1.75;margin-bottom:10px;}
+.mrow{display:flex;gap:9px;margin-bottom:13px;flex-wrap:wrap;}
+.mcard{flex:1;min-width:72px;padding:9px;background:rgba(0,200,240,.04);border:1px solid rgba(0,200,240,.14);}
+.mval{display:block;font-family:var(--display);font-size:17px;color:var(--cyan);}
+.mlbl{font-size:7.5px;color:var(--muted);letter-spacing:1px;}
+.alist{display:flex;flex-direction:column;gap:5px;margin-bottom:11px;}
+.ai{padding:6px 8px;font-size:10px;font-family:var(--mono);
+  background:rgba(255,30,60,.04);border:1px solid rgba(255,30,60,.18);border-left:2.5px solid var(--red);}
+.ai.m{border-left-color:var(--orange);background:rgba(255,119,0,.04);border-color:rgba(255,119,0,.18);}
+.ai.l{border-left-color:var(--yellow);background:rgba(255,208,0,.04);border-color:rgba(255,208,0,.14);}
+.ai.g{border-left-color:var(--green);background:rgba(0,255,136,.04);border-color:rgba(0,255,136,.14);color:var(--green);}
+.insight{padding:10px;margin:10px 0;background:rgba(155,77,255,.07);
+  border:1px solid rgba(155,77,255,.22);border-left:3px solid var(--purple);}
+.inslbl{font-family:var(--display);font-size:8px;color:var(--purple);letter-spacing:2px;margin-bottom:6px;}
+.instxt{font-size:11px;color:var(--text);line-height:1.75;}
+.pbtree{display:flex;flex-direction:column;gap:6px;}
+.pbnode{padding:6px 9px;display:flex;align-items:center;gap:8px;
+  background:rgba(0,200,240,.03);border:1px solid rgba(0,200,240,.09);font-size:11px;transition:all .2s;}
+.pbnode.done{border-left:2.5px solid var(--green);color:var(--green);}
+
+/* ══════════════════════════════
+   L1 ESCALATION ANIMATION
+══════════════════════════════ */
+.escalate-badge{
+  position:fixed;z-index:500;
+  background:rgba(255,30,60,.18);border:1px solid var(--red);
+  font-family:var(--mono);font-size:8px;color:var(--red);
+  padding:4px 8px;pointer-events:none;white-space:nowrap;
+  animation:escfly 2s ease forwards;}
+@keyframes escfly{
+  0%{opacity:0;transform:scale(.8) translateY(0);}
+  15%{opacity:1;transform:scale(1) translateY(0);}
+  85%{opacity:1;transform:scale(1) translateY(-40px);}
+  100%{opacity:0;transform:scale(.9) translateY(-60px);}
+}
+
+/* ══════════════════════════════
+   AI COPILOT
+══════════════════════════════ */
+#cop{position:fixed;bottom:38px;left:10px;width:284px;z-index:180;
+  background:rgba(3,12,25,.96);border:1px solid rgba(0,200,240,.22);backdrop-filter:blur(12px);}
+.cophdr{display:flex;justify-content:space-between;align-items:center;
+  padding:7px 11px;cursor:pointer;background:rgba(0,200,240,.06);
+  border-bottom:1px solid rgba(0,200,240,.1);font-family:var(--display);
+  font-size:9.5px;color:var(--cyan);letter-spacing:2px;}
+.copbody{display:flex;flex-direction:column;}
+.copbody.hide{display:none;}
+#copmsgs{height:140px;overflow-y:auto;padding:8px;display:flex;flex-direction:column;gap:6px;}
+.cm{padding:6px 8px;font-size:10px;line-height:1.55;max-width:92%;border-radius:2px;}
+.cm.ai{background:rgba(155,77,255,.09);border-left:2px solid var(--purple);color:var(--text);align-self:flex-start;}
+.cm.usr{background:rgba(0,200,240,.07);border-right:2px solid var(--blue);color:var(--cyan);align-self:flex-end;text-align:right;}
+.copinp{display:flex;border-top:1px solid rgba(0,200,240,.1);}
+#cinput{flex:1;background:transparent;border:none;color:var(--text);font-family:var(--mono);
+  font-size:10px;padding:7px 8px;outline:none;}
+#cinput::placeholder{color:var(--muted);}
+.csend{background:rgba(0,200,240,.08);border:none;border-left:1px solid rgba(0,200,240,.1);
+  color:var(--blue);font-size:14px;padding:0 11px;cursor:pointer;transition:all .2s;}
+.csend:hover{background:rgba(0,200,240,.18);}
+
+/* ── TIMELINE ── */
+#tl{position:fixed;bottom:0;left:0;right:0;height:38px;z-index:200;
+  background:rgba(2,8,18,.96);border-top:1px solid rgba(0,200,240,.13);
+  display:flex;align-items:center;padding:0 12px;gap:12px;backdrop-filter:blur(10px);}
+.tllbl{font-family:var(--mono);font-size:10px;color:var(--blue);white-space:nowrap;min-width:58px;}
+.tltrack{flex:1;height:4px;background:rgba(255,255,255,.05);border-radius:2px;position:relative;}
+.tlprog{height:100%;width:0%;background:linear-gradient(90deg,var(--blue),var(--cyan));
+  border-radius:2px;transition:width .8s ease;}
+.tlknob{position:absolute;top:50%;transform:translate(-50%,-50%);width:10px;height:10px;
+  background:var(--cyan);border-radius:50%;left:0%;transition:left .8s ease;box-shadow:0 0 7px var(--cyan);}
+.tlphase{font-family:var(--display);font-size:8.5px;color:var(--green);letter-spacing:3px;white-space:nowrap;min-width:120px;text-align:right;}
+
+/* ── FX ── */
+#shock{position:fixed;top:50%;left:50%;width:0;height:0;border-radius:50%;
+  border:3px solid var(--red);transform:translate(-50%,-50%);
+  pointer-events:none;z-index:600;opacity:0;}
+#shock.bang{animation:shockgo 1.1s ease-out forwards;}
+@keyframes shockgo{0%{width:0;height:0;opacity:.9;border-width:5px}100%{width:210vw;height:210vw;opacity:0;border-width:1px}}
+#nar{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);
+  z-index:700;pointer-events:none;font-family:var(--display);font-size:18px;
+  letter-spacing:4px;color:var(--red);text-align:center;
+  text-shadow:0 0 28px rgba(255,30,60,.9);opacity:0;max-width:80vw;line-height:1.4;}
+#nar.show{animation:narshow 3.2s ease forwards;}
+@keyframes narshow{0%{opacity:0;transform:translate(-50%,-50%) scale(.82)}18%{opacity:1;transform:translate(-50%,-50%) scale(1)}70%{opacity:1}100%{opacity:0;transform:translate(-50%,-50%) scale(1.06)}}
+
+/* ══════════════════════════════════════════════════════
+   MOBILE — ≤ 768px
+   Switches to vertical scrollable card layout
+══════════════════════════════════════════════════════ */
+@media (max-width:768px){
+  html,body{overflow-y:auto;overflow-x:hidden;cursor:default;}
+  #bgc,.scanlines,.vignette{display:none;}
+
+  /* HUD */
+  #hud{height:auto;flex-wrap:wrap;padding:8px 10px;gap:6px;position:sticky;top:0;}
+  .hud-brand{width:100%;justify-content:center;}
+  .hud-sep,.hud-sub{display:none;}
+  .hud-mid{display:none;}
+  .hud-stats{width:100%;justify-content:center;gap:16px;}
+  #clock{font-size:10px;}
+
+  /* Controls */
+  #controls{position:sticky;top:72px;transform:none;left:0;width:100%;
+    justify-content:center;background:rgba(2,9,18,.95);padding:6px;
+    border-bottom:1px solid rgba(0,200,240,.1);}
+
+  /* Stage → scrollable flex column */
+  #stage{position:relative;top:0;left:0;right:0;bottom:auto;height:auto;
+    display:flex;flex-direction:column;gap:10px;padding:10px;overflow:visible;}
+  #svg{display:none;}
+
+  /* Brain → centered card */
+  #brain{position:relative;left:auto;top:auto;transform:none;
+    margin:0 auto;width:120px;height:120px;display:block;}
+
+  /* Nodes → grid */
+  .nodes-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;width:100%;}
+  .node{position:relative;left:auto!important;top:auto!important;transform:none!important;
+    width:100%;height:auto;min-height:76px;padding:10px 8px;
+    clip-path:none;border-radius:4px;}
+  .node:hover{transform:none!important;}
+
+  /* Panels */
+  #logfeed,#l1triage,#mitre,#kc,#risk{
+    position:relative;right:auto;left:auto;top:auto;bottom:auto;
+    width:100%;transform:none;}
+  #logfeed{height:160px;}
+  #l1triage{height:auto;}
+  #mitre{width:100%;}
+  #kc{width:100%;}
+  #risk{display:flex;justify-content:center;}
+  .mtactics{flex-wrap:wrap;}
+  .mtac{min-width:40px;}
+
+  /* Detail panel → full screen bottom sheet */
+  #panel{width:100%;right:auto;left:0;top:auto;bottom:-100%;height:80vh;
+    border-left:none;border-top:1px solid rgba(0,200,240,.28);
+    transition:bottom .42s cubic-bezier(.25,.46,.45,.94);}
+  #panel.on{bottom:0;}
+
+  /* Copilot → full width */
+  #cop{position:sticky;bottom:0;left:0;width:100%;border-left:none;border-right:none;border-bottom:none;}
+  #copmsgs{height:110px;}
+
+  /* Timeline */
+  #tl{padding:0 10px;gap:8px;}
+  .tllbl{min-width:50px;font-size:9px;}
+  .tlphase{min-width:90px;font-size:7.5px;}
+
+  /* Narration */
+  #nar{font-size:14px;letter-spacing:2px;}
+
+  /* HUD logo smaller */
+  .hud-logo{font-size:13px;}
+  .hud-pc{font-size:9px;}
+}
+
+@media (max-width:400px){
+  .hud-logo{font-size:11px;letter-spacing:2px;}
+  .hstat-n{font-size:12px;}
+  .nodes-grid{grid-template-columns:1fr 1fr;}
+  .node{min-height:68px;}
+}
+
+/* Scrollbar */
+::-webkit-scrollbar{width:3px;}
+::-webkit-scrollbar-track{background:var(--bg);}
+::-webkit-scrollbar-thumb{background:rgba(0,200,240,.28);border-radius:2px;}
+</style>
+</head>
+<body>
+
+<canvas id="bgc"></canvas>
+<div class="scanlines"></div>
+<div class="vignette"></div>
+
+<!-- ═══ HUD ═══ -->
+<div id="hud">
+  <div class="hud-brand">
+    <span class="hud-pc">POWER CONSULTANCY</span>
+    <span class="hud-dot">·</span>
+    <span class="hud-logo">POWER<span>CORTEX</span></span>
+    <span class="hud-sep">|</span>
+    <span class="hud-sub">AI Security Operations</span>
+  </div>
+  <div class="hud-mid">
+    <div class="thr-wrap">
+      <span class="thr-lbl">THREAT</span>
+      <div class="thr-track"><div class="thr-fill" id="thrFill"></div></div>
+      <span class="thr-val" id="thrVal">LOW</span>
+    </div>
+  </div>
+  <div class="hud-stats">
+    <div class="hstat"><span class="hstat-n" id="sevt">14,281</span><span class="hstat-l">EVENTS/S</span></div>
+    <div class="hstat"><span class="hstat-n" id="salt">0</span><span class="hstat-l">ALERTS</span></div>
+    <div class="hstat"><span class="hstat-n" id="sblk">1,847</span><span class="hstat-l">BLOCKED</span></div>
+    <div id="clock">00:00:00</div>
+  </div>
+</div>
+
+<!-- ═══ CONTROLS ═══ -->
+<div id="controls">
+  <button class="cbtn on" id="bstory" onclick="storyAction()">▶ STORY</button>
+  <button class="cbtn" id="bexplore" onclick="setMode('explore')">⊹ EXPLORE</button>
+  <button class="abtn" id="batk" onclick="launchAttack()">☣ SIMULATE ATTACK</button>
+</div>
+
+<!-- ═══ STAGE (desktop: fixed canvas | mobile: scrollable column) ═══ -->
+<div id="stage">
+  <svg id="svg"></svg>
+
+  <!-- AI Brain — animated neural network -->
+  <div id="brain" onclick="openPanel('ai')">
+    <div class="bglow"></div>
+    <canvas id="brainCanvas"></canvas>
+    <div class="boverlay">
+      <div class="btitle">AI CORE</div>
+      <div class="bsub">PowerCortex v4</div>
+    </div>
+  </div>
+
+  <!-- ── MOBILE GRID WRAPPER (ignored on desktop via absolute positioning) ── -->
+  <div class="nodes-grid" id="nodesGrid">
+
+    <!-- SIEM -->
+    <div class="node" id="nSIEM" style="left:16%;top:22%" onclick="openPanel('siem')">
+      <div class="nbadge" id="bdSIEM">3</div><div class="ndot" id="dtSIEM"></div>
+      <div class="nicon">⬡</div><div class="ntitle">SIEM</div>
+      <div class="nsub">Event Correlation</div>
+    </div>
+
+    <!-- SOAR -->
+    <div class="node" id="nSOAR" style="left:80%;top:22%" onclick="openPanel('soar')">
+      <div class="nbadge" id="bdSOAR">0</div><div class="ndot" id="dtSOAR"></div>
+      <div class="nicon">⚡</div><div class="ntitle">SOAR</div>
+      <div class="nsub">Auto Response</div>
+    </div>
+
+    <!-- L1 — now shows analyst name -->
+    <div class="node" id="nL1" style="left:16%;top:74%" onclick="openPanel('l1')">
+      <div class="nbadge" id="bdL1">0</div><div class="ndot" id="dtL1"></div>
+      <div class="nicon">👁</div><div class="ntitle">L1 ANALYST</div>
+      <div class="nsub">AI Triage</div>
+      <div class="nanalyst">T. Osman</div>
+    </div>
+
+    <!-- L2 -->
+    <div class="node" id="nL2" style="left:80%;top:74%" onclick="openPanel('l2')">
+      <div class="nbadge" id="bdL2">0</div><div class="ndot" id="dtL2"></div>
+      <div class="nicon">🔬</div><div class="ntitle">L2 ANALYST</div>
+      <div class="nsub">Deep Investigation</div>
+      <div class="nanalyst">D. Vael</div>
+    </div>
+
+    <!-- Threat Intel -->
+    <div class="node" id="nTI" style="left:50%;top:12%" onclick="openPanel('ti')">
+      <div class="nbadge" id="bdTI">0</div><div class="ndot" id="dtTI"></div>
+      <div class="nicon">🌐</div><div class="ntitle">THREAT INTEL</div>
+      <div class="nsub">IOC + Dark Web</div>
+    </div>
+
+    <!-- NDR -->
+    <div class="node" id="nNDR" style="left:6%;top:48%" onclick="openPanel('ndr')">
+      <div class="nbadge" id="bdNDR">0</div><div class="ndot" id="dtNDR"></div>
+      <div class="nicon">📡</div><div class="ntitle">NDR</div>
+      <div class="nsub">Network Detect</div>
+    </div>
+
+    <!-- UEBA -->
+    <div class="node" id="nUEBA" style="left:89%;top:48%" onclick="openPanel('ueba')">
+      <div class="nbadge" id="bdUEBA">0</div><div class="ndot" id="dtUEBA"></div>
+      <div class="nicon">👤</div><div class="ntitle">UEBA</div>
+      <div class="nsub">Behavior Analytics</div>
+    </div>
+
+    <!-- IR -->
+    <div class="node" id="nIR" style="left:50%;top:89%" onclick="openPanel('ir')">
+      <div class="nbadge" id="bdIR">0</div><div class="ndot" id="dtIR"></div>
+      <div class="nicon">🛡</div><div class="ntitle">INCIDENT RESP</div>
+      <div class="nsub">Containment</div>
+    </div>
+
+  </div><!-- /nodes-grid -->
+
+  <!-- Source nodes (hidden on mobile) -->
+  <div class="src" id="sFW"   style="left:2%;top:12%">🔥 FIREWALL</div>
+  <div class="src" id="sEDR"  style="left:2%;top:24%">💻 ENDPOINT</div>
+  <div class="src" id="sCLD"  style="left:2%;top:36%">☁ CLOUD</div>
+  <div class="src" id="sMAIL" style="left:93%;top:12%">✉ EMAIL</div>
+  <div class="src" id="sIAM"  style="left:93%;top:24%">🔑 IDENTITY</div>
+  <div class="src" id="sDNS"  style="left:93%;top:36%">🌐 DNS</div>
+
+  <!-- Log Feed -->
+  <div id="logfeed">
+    <div class="lfhdr">⬡ LIVE EVENT STREAM</div>
+    <div id="loglines"></div>
+  </div>
+
+  <!-- L1 Live Triage Panel -->
+  <div id="l1triage">
+    <div class="l1hdr">
+      <span>👁 L1 TRIAGE — TARIQ OSMAN</span>
+      <span class="l1analyst" id="l1status">● ACTIVE</span>
+    </div>
+    <div class="l1queue" id="l1queue"></div>
+    <div class="fp-bar"><div class="fp-fill" id="fpFill"></div></div>
+    <div class="l1stats">
+      <div class="l1stat"><span class="l1snum" id="l1triaged">0</span><span class="l1slbl">TRIAGED</span></div>
+      <div class="l1stat"><span class="l1snum" id="l1escalated">0</span><span class="l1slbl">ESCALATED</span></div>
+      <div class="l1stat"><span class="l1snum" id="l1falsepos">0</span><span class="l1slbl">FALSE POS</span></div>
+    </div>
+  </div>
+
+  <!-- MITRE -->
+  <div id="mitre">
+    <div class="mhdr">MITRE ATT&CK — POWERCORTEX LIVE DETECTION</div>
+    <div class="mtactics" id="mtacs"></div>
+    <div id="mgrid"></div>
+  </div>
+
+  <!-- Kill Chain -->
+  <div id="kc">
+    <div class="kchdr">⬡ GHOST MERIDIAN ATTACK — KILL CHAIN</div>
+    <div id="kcstages"></div>
+  </div>
+
+  <!-- Risk Gauge -->
+  <div id="risk">
+    <svg viewBox="0 0 140 140" width="140" height="140">
+      <defs>
+        <linearGradient id="rg" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stop-color="#00ff88"/>
+          <stop offset="50%" stop-color="#ffd000"/>
+          <stop offset="100%" stop-color="#ff1e3c"/>
+        </linearGradient>
+      </defs>
+      <circle cx="70" cy="70" r="54" fill="none" stroke="rgba(0,200,240,.07)" stroke-width="9"/>
+      <circle cx="70" cy="70" r="54" fill="none" stroke="url(#rg)" stroke-width="9"
+        stroke-dasharray="339" stroke-dashoffset="305" stroke-linecap="round"
+        transform="rotate(-90 70 70)" id="riskArc" style="transition:stroke-dashoffset 1.4s ease"/>
+      <text x="70" y="65" text-anchor="middle" fill="#00ffd0" font-size="20" font-weight="800" id="riskNum">8</text>
+      <text x="70" y="80" text-anchor="middle" fill="#3a5570" font-size="7" letter-spacing="2">RISK SCORE</text>
+      <text x="70" y="93" text-anchor="middle" fill="#00ff88" font-size="8" letter-spacing="3" id="riskLbl">LOW</text>
+    </svg>
+  </div>
+
+</div><!-- /stage -->
+
+<!-- Detail Panel -->
+<div id="overlay" onclick="closePanel()"></div>
+<div id="panel">
+  <button class="pclose" onclick="closePanel()">✕</button>
+  <div id="pcontent"></div>
+</div>
+
+<!-- Copilot -->
+<div id="cop">
+  <div class="cophdr" onclick="toggleCop()">
+    <span>🤖 POWERCORTEX COPILOT</span><span id="ctog">▲</span>
+  </div>
+  <div class="copbody" id="copbody">
+    <div id="copmsgs">
+      <div class="cm ai">PowerCortex online. Monitoring 14,281 events/sec. Tariq Osman (L1) and Darius Vael (L2) are on shift. No active incidents — ask me anything.</div>
+    </div>
+    <div class="copinp">
+      <input id="cinput" type="text" placeholder="Ask about threats, alerts, IOCs..."/>
+      <button class="csend" onclick="sendCop()">⮕</button>
+    </div>
+  </div>
+</div>
+
+<!-- Timeline -->
+<div id="tl">
+  <div class="tllbl">T+<span id="tlsec">00:00</span></div>
+  <div class="tltrack"><div class="tlprog" id="tlprog"></div><div class="tlknob" id="tlknob"></div></div>
+  <div class="tlphase" id="tlphase">MONITORING</div>
+</div>
+
+<!-- FX -->
+<div id="shock"></div>
+<div id="nar"></div>
+
+<script>
+// ══════════════════════════════════════════════════
+// DATA
+// ══════════════════════════════════════════════════
+const LOGS = {
+  n:[
+    '[FW] ALLOW TCP 10.0.1.45:52341 → 8.8.8.8:443',
+    '[EDR] Scan complete — 0 threats on WIN-CORP-042',
+    '[AUTH] zara.whitfield@powerconsult.com — LOGIN OK (MFA)',
+    '[DNS] Resolved cdn.cloudflare.com → 104.16.8.5 — OK',
+    '[CLOUD] S3 ListObjects — svc-cortex-api — normal',
+    '[FW] ALLOW HTTPS 10.0.2.18 → azure.microsoft.com',
+    '[IAM] Token refresh svc-cortex-api — scope unchanged',
+    '[EDR] chrome.exe hash VERIFIED — TRUSTED',
+    '[NET] Baseline traffic nominal — all segments',
+    '[SIEM] Correlation cycle complete — 0 new hits',
+    '[FW] BLOCK TCP → 0.0.0.0:23 (Telnet — policy)',
+    '[DNS] PTR record lookup 10.0.1.12 — OK',
+    '[AUTH] kenji.motosu@powerconsult.com — LOGIN OK',
+    '[EDR] WIN-NFERRANTE-L — patch KB5034441 applied',
+  ],
+  w:[
+    '[FW] ⚠ Port scan — src 185.220.101.47 (TOR exit node)',
+    '[AUTH] ⚠ Failed login ×3 — admin@powerconsult.com',
+    '[DNS] ⚠ Query *.onion domain — blocked at proxy',
+    '[EDR] ⚠ Unknown process svch0st.exe — PID 4412',
+    '[CLOUD] ⚠ Unusual API ListAllBuckets — 03:14 UTC',
+    '[IAM] ⚠ Privilege escalation attempt — svc-backup',
+    '[NET] ⚠ Anomalous east-west — port 4444 sweep',
+    '[UEBA] ⚠ zara.whitfield — data volume 153× above baseline',
+  ],
+  c:[
+    '[CRITICAL] 🔴 Ransomware sig LOCKBIT v3 — WIN-ZWHITFIELD-L',
+    '[CRITICAL] 🔴 Exfil — 4.2 GB → 91.108.4.200 (Ghost Meridian C2)',
+    '[CRITICAL] 🔴 Lateral move — admin$ share → DC01-CORP',
+    '[CRITICAL] 🔴 Mimikatz in memory — WIN-ZWHITFIELD-L',
+    '[CRITICAL] 🔴 C2 beacon — update-securevault[.]net',
+    '[CRITICAL] 🔴 Golden ticket attack — Kerberos TGT forged',
+    '[CRITICAL] 🔴 Mass encryption — 847 files/sec',
+    '[CRITICAL] 🔴 Ghost Meridian TTPs confirmed — APT attribution',
+  ]
+};
+
+const L1_ALERTS = [
+  {sev:'c',msg:'Ransomware sig — WIN-ZWHITFIELD-L',act:'esc'},
+  {sev:'h',msg:'Brute force admin@powerconsult.com ×47',act:'esc'},
+  {sev:'c',msg:'C2 beacon → update-securevault[.]net',act:'esc'},
+  {sev:'m',msg:'Unusual DNS query pattern — 3 hosts',act:'rev'},
+  {sev:'h',msg:'Mimikatz artifact in memory — PID 4412',act:'esc'},
+  {sev:'l',msg:'Port scan from 185.220.101.47 (known red team)',act:'dis'},
+  {sev:'m',msg:'Off-hours login — kenji.motosu — VPN:UAE',act:'rev'},
+  {sev:'l',msg:'TLS 1.0 cipher flagged — legacy host',act:'dis'},
+  {sev:'h',msg:'UEBA: zara.whitfield 18GB download 02:30',act:'esc'},
+  {sev:'m',msg:'S3 ListAllBuckets — svc-cortex-api anomaly',act:'rev'},
+  {sev:'l',msg:'Expired cert on WIN-CORP-088 — low risk',act:'dis'},
+  {sev:'c',msg:'Lateral move DC01-CORP via admin$ share',act:'esc'},
+];
+
+const MITRE_TACS = ['Recon','Res Dev','Init Access','Execution','Persistence','Priv Esc','Def Evasion','Cred Access','Discovery','Lateral','Exfil'];
+const KC = ['RECON','WEAPONIZE','DELIVER','EXPLOIT','INSTALL','C2','EXFILTRATE'];
+
+const COPILOT_RESPONSES = {
+  default:[
+    'Monitoring 14,281 events/sec. Ghost Meridian (APT) and LockBit 3.0 are the top active threat actors this week. 12 IOCs matched in last hour.',
+    'SIEM ML engine correlated 41.2M raw events down to 127 alert clusters today. Tariq Osman has triaged 94% with AI assistance.',
+    'UEBA flagged zara.whitfield@powerconsult.com — risk score 94/100. Abnormal 18 GB data download at 02:30 UTC. L2 Darius Vael is investigating.',
+    'SOAR auto-resolved 91% of today\'s 1,847 alerts. Mean response time 4.2 seconds. Active playbook: Ransomware LockBit v3 — 5/7 steps complete.',
+    'NDR monitoring 28 Gbps east-west traffic. Periodic C2 beaconing from WIN-ZWHITFIELD-L every 240s — blocked. No current lateral movement.',
+  ],
+  attack:[
+    'ALERT: Ransomware IOCs match LockBit v3 — Ghost Meridian campaign. C2 91.108.4.200 confirmed malicious, 47/94 VT engines. Tariq Osman escalated to Darius Vael.',
+    'Lateral movement confirmed: attacker pivoted WIN-ZWHITFIELD-L → DC01-CORP via SMB admin shares. Both endpoints isolated by SOAR automatically.',
+    'Attack timeline: phishing to zara.whitfield@powerconsult.com T-03:42 → macro execution → CVE-2024-3094 priv-esc → ransomware detonation. Dwell: 3h 42m.',
+    'SOAR playbook executing: firewall block applied, forensic snapshot taken, 3 credentials rotated. Nadia Ferrante (SOC Manager) and Reuben Achike (CISO) notified. Backup restore at 67%.',
+  ]
+};
+
+const PANELS = {
+  ai:{title:'AI CORE',sub:'PowerCortex Neural Engine v4.2 — Power Consultancy',html:`
+    <div class="mrow">
+      <div class="mcard"><span class="mval">7</span><span class="mlbl">ML MODELS</span></div>
+      <div class="mcard"><span class="mval">99.3%</span><span class="mlbl">ACCURACY</span></div>
+      <div class="mcard"><span class="mval">42ms</span><span class="mlbl">LATENCY</span></div>
+    </div>
+    <hr class="pdiv"><div class="psect">ACTIVE ML MODELS</div>
+    <div class="alist">
+      <div class="ai l">🔵 Anomaly Detection — Isolation Forest (99.1%)</div>
+      <div class="ai l">🔵 Malware Classification — XGBoost Ensemble (99.7%)</div>
+      <div class="ai l">🔵 User Behavior Baseline — LSTM Neural Network</div>
+      <div class="ai l">🔵 Threat Narrative — Transformer (fine-tuned)</div>
+      <div class="ai l">🔵 Network Graph Analytics — GNN Model</div>
+      <div class="ai l">🔵 Log Correlation — BERT (SOC fine-tuned)</div>
+      <div class="ai l">🔵 Risk Scoring — Gradient Boosting Ensemble</div>
+    </div>
+    <hr class="pdiv">
+    <div class="insight">
+      <div class="inslbl">🧠 POWERCORTEX STATUS</div>
+      <div class="instxt">Monitoring 847 detection rules across 9 integrated systems. Behavioral baselines active for 1,204 entities. Tariq Osman (L1) and Darius Vael (L2) are on shift. Nadia Ferrante is on-call SOC Manager. No anomalies in last 15 minutes. Threat posture: LOW.</div>
+    </div>`
+  },
+  siem:{title:'SIEM',sub:'Security Information & Event Management — AI Correlation',html:`
+    <div class="mrow">
+      <div class="mcard"><span class="mval">14.2K</span><span class="mlbl">EVENTS/SEC</span></div>
+      <div class="mcard"><span class="mval">847</span><span class="mlbl">RULES</span></div>
+      <div class="mcard"><span class="mval">96%</span><span class="mlbl">FALSE+ DOWN</span></div>
+    </div>
+    <hr class="pdiv"><div class="psect">INGESTED SOURCES</div>
+    <div class="alist">
+      <div class="ai g">✅ Firewall logs — 3,200 events/sec</div>
+      <div class="ai g">✅ Endpoint telemetry (EDR) — 4,100 events/sec</div>
+      <div class="ai g">✅ Cloud audit (AWS/Azure) — 2,800 events/sec</div>
+      <div class="ai g">✅ Email gateway — 1,400 events/sec</div>
+      <div class="ai g">✅ DNS / Proxy — 2,700 events/sec</div>
+    </div>
+    <hr class="pdiv">
+    <div class="ptext">PowerCortex applies unsupervised ML clustering to identify rare event combinations invisible to static rules, reducing noise by 96% before alerts reach Tariq Osman at L1.</div>
+    <div class="insight">
+      <div class="inslbl">🧠 CORRELATION INSIGHT</div>
+      <div class="instxt">Over 24h: 41.2M raw events correlated down to 127 unique clusters. Top anomaly: DNS staging pattern on 3 endpoints matching Ghost Meridian TTPs — auto-escalated to Darius Vael (L2) at 03:18 UTC.</div>
+    </div>`
+  },
+  soar:{title:'SOAR',sub:'Security Orchestration, Automation & Response',html:`
+    <div class="mrow">
+      <div class="mcard"><span class="mval">238</span><span class="mlbl">PLAYBOOKS</span></div>
+      <div class="mcard"><span class="mval">4.2s</span><span class="mlbl">RESPONSE</span></div>
+      <div class="mcard"><span class="mval">91%</span><span class="mlbl">AUTO-RESOLVED</span></div>
+    </div>
+    <hr class="pdiv"><div class="psect">ACTIVE PLAYBOOK — LOCKBIT v3</div>
+    <div class="pbtree">
+      <div class="pbnode done">✅ Detect LockBit v3 signature via ML classifier</div>
+      <div class="pbnode done">✅ Isolate WIN-ZWHITFIELD-L from all segments</div>
+      <div class="pbnode done">✅ Block C2 IP 91.108.4.200 at perimeter</div>
+      <div class="pbnode done">✅ Take forensic memory snapshot (32 GB)</div>
+      <div class="pbnode done">✅ Rotate 3 compromised credentials</div>
+      <div class="pbnode">⏳ Notify Nadia Ferrante + Reuben Achike — in progress</div>
+      <div class="pbnode">⬜ Validate backup integrity — pending</div>
+      <div class="pbnode">⬜ Generate CISO report — pending</div>
+    </div>
+    <div class="insight" style="margin-top:12px">
+      <div class="inslbl">🧠 AI DECISION REASONING</div>
+      <div class="instxt">Isolation decision at 98.2% confidence: LockBit v3 binary hash match, active C2 beacon every 240s, mass file modification at 847 files/sec. Human escalation triggered because lateral movement reached DC01-CORP — Darius Vael sign-off required before broader segmentation.</div>
+    </div>`
+  },
+  l1:{title:'L1 ANALYST — TARIQ OSMAN',sub:'Tier 1 · AI-Assisted Triage · PowerCortex Co-Pilot Active',html:`
+    <div class="mrow">
+      <div class="mcard"><span class="mval">1,847</span><span class="mlbl">ALERTS TODAY</span></div>
+      <div class="mcard"><span class="mval">94%</span><span class="mlbl">AI TRIAGED</span></div>
+      <div class="mcard"><span class="mval">6%</span><span class="mlbl">HUMAN REVIEW</span></div>
+    </div>
+    <hr class="pdiv"><div class="psect">AI CO-PILOT ENRICHMENT — LIVE</div>
+    <div class="alist">
+      <div class="ai l">🔵 Auto IP reputation — VirusTotal, AbuseIPDB, OTX</div>
+      <div class="ai l">🔵 WHOIS + geo enrichment on every IOC</div>
+      <div class="ai l">🔵 False positive suppression — 96% reduction</div>
+      <div class="ai l">🔵 Priority scoring: CRITICAL / HIGH / MED / LOW</div>
+      <div class="ai l">🔵 One-click escalation to Darius Vael (L2) with AI summary</div>
+    </div>
+    <hr class="pdiv"><div class="psect">TARIQ'S ACTIVE QUEUE</div>
+    <div class="alist">
+      <div class="ai">🔴 CRIT — LockBit v3 on WIN-ZWHITFIELD-L (ESCALATED → Darius Vael)</div>
+      <div class="ai m">🟠 HIGH — Brute force admin@powerconsult.com ×47 attempts</div>
+      <div class="ai m">🟠 HIGH — UEBA: zara.whitfield 18 GB anomaly (ESCALATED)</div>
+      <div class="ai l">🟡 MED — Unusual DNS query pattern (AI: likely benign CDN)</div>
+      <div class="ai g">✅ LOW — Port scan known red-team IP (suppressed by PowerCortex)</div>
+    </div>
+    <hr class="pdiv"><div class="psect">FALSE POSITIVE REDUCTION</div>
+    <div class="ptext">Without PowerCortex AI, Tariq would face ~1,847 raw alerts per shift. The AI co-pilot auto-suppresses 96% as false positives after enrichment, leaving only 111 alerts that require human judgement. Critical ones — like the LockBit detection — are auto-escalated to Darius Vael at L2 with a pre-built investigation summary.</div>
+    <div class="insight">
+      <div class="inslbl">🧠 IP ENRICHMENT — 91.108.4.200</div>
+      <div class="instxt">Geo: Rostov-on-Don, Russia · AS: Selectel Ltd · Reputation: MALICIOUS (47/94 VT engines) · Campaigns: LockBit 3.0, Ghost Meridian · First seen 2024-01-15 · Tariq actioned: BLOCK + ESCALATE to Darius Vael.</div>
+    </div>`
+  },
+  l2:{title:'L2 ANALYST — DARIUS VAEL',sub:'Tier 2 · Deep Forensics · ATT&CK Mapping · INC-2024-047',html:`
+    <div class="mrow">
+      <div class="mcard"><span class="mval">3</span><span class="mlbl">OPEN CASES</span></div>
+      <div class="mcard"><span class="mval">47 min</span><span class="mlbl">DWELL TIME</span></div>
+      <div class="mcard"><span class="mval">ATT&CK</span><span class="mlbl">MAPPED</span></div>
+    </div>
+    <hr class="pdiv"><div class="psect">ATTACK TIMELINE — INC-2024-047</div>
+    <div class="alist">
+      <div class="ai l">T−03:42 · Phishing email → zara.whitfield@powerconsult.com</div>
+      <div class="ai l">T−03:15 · Macro executed — Office 365 Word document</div>
+      <div class="ai m">T−02:47 · Payload dropped: svch0st.exe (masquerading svchost)</div>
+      <div class="ai m">T−02:31 · Priv-esc via CVE-2024-3094 (XZ Utils backdoor)</div>
+      <div class="ai">T−01:08 · Lateral move WIN-ZWHITFIELD-L → DC01-CORP via admin$</div>
+      <div class="ai">T−00:22 · LockBit v3 detonated — 847 files/sec encryption</div>
+    </div>
+    <hr class="pdiv"><div class="psect">MITRE ATT&CK MAPPING</div>
+    <div class="alist">
+      <div class="ai m">T1566.001 · Spearphishing Attachment</div>
+      <div class="ai m">T1059.003 · Windows Command Shell Execution</div>
+      <div class="ai">T1068 · Exploitation for Privilege Escalation</div>
+      <div class="ai">T1021.002 · SMB / Windows Admin Shares</div>
+      <div class="ai">T1486 · Data Encrypted for Impact</div>
+    </div>
+    <div class="insight" style="margin-top:12px">
+      <div class="inslbl">🧠 AI ATTACK NARRATIVE</div>
+      <div class="instxt">Ghost Meridian delivered a targeted spearphishing email to zara.whitfield@powerconsult.com. A weaponised Office macro dropped svch0st.exe, which exploited CVE-2024-3094 to gain SYSTEM privileges. Attacker harvested Kerberos tickets via Mimikatz, pivoted to DC01-CORP, then detonated LockBit v3. Total dwell: 3h 42m. Darius Vael confirmed attribution to Ghost Meridian campaign cluster.</div>
+    </div>`
+  },
+  ti:{title:'THREAT INTEL',sub:'Dark Web · IOC Aggregation · Ghost Meridian Tracking',html:`
+    <div class="mrow">
+      <div class="mcard"><span class="mval">84</span><span class="mlbl">FEEDS</span></div>
+      <div class="mcard"><span class="mval">2.4M</span><span class="mlbl">IOCS TODAY</span></div>
+      <div class="mcard"><span class="mval">12</span><span class="mlbl">ACTORS</span></div>
+    </div>
+    <hr class="pdiv"><div class="psect">TRACKED THREAT ACTORS</div>
+    <div class="alist">
+      <div class="ai">🔴 Ghost Meridian — Active campaign, EMEA finance/energy targets</div>
+      <div class="ai">🔴 LockBit 3.0 — New RaaS variant, ransomware-as-a-service</div>
+      <div class="ai m">🟠 Scattered Spider — Telecom social engineering campaign</div>
+      <div class="ai l">🟡 Lazarus Group — Crypto exchange recon observed</div>
+    </div>
+    <hr class="pdiv"><div class="psect">MATCHED IOCS — INC-2024-047</div>
+    <div class="alist">
+      <div class="ai">IP 91.108.4.200 — Ghost Meridian C2 (47/94 VT engines)</div>
+      <div class="ai">Hash a4c2e9f1... — LockBit v3 dropper (confirmed)</div>
+      <div class="ai m">Domain update-securevault[.]net — Active phishing kit</div>
+      <div class="ai m">Hash d7a1bc3e... — Mimikatz v2.2.0 modified variant</div>
+    </div>
+    <div class="insight" style="margin-top:12px">
+      <div class="inslbl">🧠 AI THREAT PREDICTION — KENJI MOTOSU</div>
+      <div class="instxt">Threat Intel Analyst Kenji Motosu flagged: Ghost Meridian is targeting mid-size consultancies in EMEA this quarter. Next likely vector: VPN credential stuffing against Fortinet appliances (CVE-2024-21762). Recommend patching all edge devices within 48h and enabling MFA on all VPN accounts.</div>
+    </div>`
+  },
+  ndr:{title:'NDR',sub:'Network Detection & Response — East-West Traffic AI',html:`
+    <div class="mrow">
+      <div class="mcard"><span class="mval">28 Gbps</span><span class="mlbl">MONITORED</span></div>
+      <div class="mcard"><span class="mval">99.8%</span><span class="mlbl">COVERAGE</span></div>
+      <div class="mcard"><span class="mval">Deep-AI</span><span class="mlbl">INSPECTION</span></div>
+    </div>
+    <hr class="pdiv"><div class="psect">ANOMALOUS FLOWS DETECTED</div>
+    <div class="alist">
+      <div class="ai">WIN-ZWHITFIELD-L → DC01-CORP: SMB lateral move (blocked)</div>
+      <div class="ai">WIN-ZWHITFIELD-L → 91.108.4.200:443: C2 beacon (blocked)</div>
+      <div class="ai m">10.0.2.0/24 → port 4444 sweep — 312 hosts scanned</div>
+      <div class="ai m">TLS 1.0 encrypted tunnel — legacy cipher flagged</div>
+    </div>
+    <hr class="pdiv">
+    <div class="ptext">PowerCortex NDR builds dynamic baselines per network segment, detecting zero-day C2 channels through ML analysis of beacon periodicity — even when traffic appears benign on the surface.</div>
+    <div class="insight">
+      <div class="inslbl">🧠 TRAFFIC INSIGHT</div>
+      <div class="instxt">Periodic C2 beacon from WIN-ZWHITFIELD-L every 240 seconds, consistent with Ghost Meridian jitter pattern. Total exfil before block: 4.2 GB over 38 minutes via HTTPS to evade deep packet inspection. C2 channel severed at 03:47 UTC.</div>
+    </div>`
+  },
+  ueba:{title:'UEBA',sub:'User & Entity Behavior Analytics — Insider Threat Detection',html:`
+    <div class="mrow">
+      <div class="mcard"><span class="mval">1,204</span><span class="mlbl">USERS</span></div>
+      <div class="mcard"><span class="mval">3</span><span class="mlbl">ANOMALIES</span></div>
+      <div class="mcard"><span class="mval">LSTM</span><span class="mlbl">MODEL</span></div>
+    </div>
+    <hr class="pdiv"><div class="psect">HIGH-RISK ENTITIES</div>
+    <div class="alist">
+      <div class="ai">zara.whitfield — Risk: 94/100 · 18 GB download at 02:30 UTC</div>
+      <div class="ai m">svc-cortex-api — Risk: 71/100 · Off-hours finance share access</div>
+      <div class="ai l">priya.menon — Risk: 44/100 · Geo anomaly — login from UAE VPN</div>
+    </div>
+    <hr class="pdiv"><div class="psect">BEHAVIORAL DEVIATION — ZARA WHITFIELD</div>
+    <div class="alist">
+      <div class="ai l">Normal download volume: 120 MB/day (30-day baseline)</div>
+      <div class="ai">Today: 18,400 MB — 153× above baseline</div>
+      <div class="ai">Files: /finance/Q4-forecasts, /strategy/M&A-pipeline-2025</div>
+      <div class="ai m">Access time: 02:28–03:14 UTC — never seen after midnight</div>
+    </div>
+    <div class="insight" style="margin-top:12px">
+      <div class="inslbl">🧠 AI VERDICT</div>
+      <div class="instxt">zara.whitfield's account shows strong compromise indicators — behaviour inconsistent with 14 months of baseline data. Most likely: credential theft post-phishing, attacker staging data for exfiltration. Account suspended by PowerCortex. Tariq Osman escalated to Darius Vael for forensic investigation.</div>
+    </div>`
+  },
+  ir:{title:'INCIDENT RESPONSE',sub:'INC-2024-047 · Ghost Meridian · LockBit v3 · P1',html:`
+    <div class="mrow">
+      <div class="mcard"><span class="mval">P1</span><span class="mlbl">SEVERITY</span></div>
+      <div class="mcard"><span class="mval">INC-047</span><span class="mlbl">CASE ID</span></div>
+      <div class="mcard"><span class="mval">47 min</span><span class="mlbl">ELAPSED</span></div>
+    </div>
+    <hr class="pdiv"><div class="psect">CONTAINMENT STATUS</div>
+    <div class="alist">
+      <div class="ai g">✅ WIN-ZWHITFIELD-L isolated — network access revoked</div>
+      <div class="ai g">✅ C2 IP 91.108.4.200 blocked at perimeter firewall</div>
+      <div class="ai g">✅ 3 compromised credentials rotated (zara.whitfield, svc-cortex-api, svc-backup)</div>
+      <div class="ai g">✅ 32 GB forensic memory snapshot captured</div>
+      <div class="ai m">⏳ Backup restoration — 67% complete, ETA 18 min</div>
+      <div class="ai">⏳ Root cause — Darius Vael sign-off pending</div>
+    </div>
+    <hr class="pdiv"><div class="psect">AI-DRAFTED CISO BRIEF — REUBEN ACHIKE</div>
+    <div class="insight">
+      <div class="inslbl">📄 EXECUTIVE SUMMARY — INC-2024-047</div>
+      <div class="instxt">A Ghost Meridian spearphishing attack targeting zara.whitfield@powerconsult.com deployed LockBit v3 ransomware at 03:22 UTC. PowerCortex AI detected and contained the threat in 22 minutes — before full encryption could complete. SOAR automatically isolated the endpoint, blocked C2 comms, and rotated credentials. Business impact: LOW due to rapid AI containment. Backup restoration ETA: 18 minutes. Analyst Tariq Osman (L1) and Darius Vael (L2) are managing the active investigation. Nadia Ferrante (SOC Manager) is coordinating response.</div>
+    </div>`
+  }
+};
+
+// ══════════════════════════════════════════════════
+// STATE
+// ══════════════════════════════════════════════════
+const S={
+  mode:'story',attacking:false,risk:8,
+  evts:14281,alts:0,blk:1847,
+  copOpen:true,tlSec:0,
+  l1triaged:0,l1escalated:0,l1falsepos:0,
+  l1queueRunning:false
+};
+
+const isMobile=()=>window.innerWidth<=768;
+
+// ══════════════════════════════════════════════════
+// BACKGROUND CANVAS
+// ══════════════════════════════════════════════════
+(function initBG(){
+  const c=document.getElementById('bgc'),ctx=c.getContext('2d');
+  const resize=()=>{c.width=innerWidth;c.height=innerHeight;};
+  resize();window.addEventListener('resize',resize);
+  const pts=Array.from({length:65},()=>({x:Math.random()*innerWidth,y:Math.random()*innerHeight,vx:(Math.random()-.5)*.22,vy:(Math.random()-.5)*.22,r:Math.random()*1.3+.3,a:Math.random()*.38+.07}));
+  const hexs=Array.from({length:20},()=>({x:Math.random()*innerWidth,y:Math.random()*innerHeight,s:Math.random()*42+16,a:Math.random()*.05+.01}));
+  function hex(x,y,s,a){ctx.beginPath();for(let i=0;i<6;i++){const ag=Math.PI/3*i;ctx.lineTo(x+s*Math.cos(ag),y+s*Math.sin(ag));}ctx.closePath();ctx.strokeStyle=`rgba(0,200,240,${a})`;ctx.lineWidth=.5;ctx.stroke();}
+  function frame(){
+    ctx.clearRect(0,0,c.width,c.height);
+    ctx.strokeStyle='rgba(0,200,240,.022)';ctx.lineWidth=.4;
+    for(let x=0;x<c.width;x+=64){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,c.height);ctx.stroke();}
+    for(let y=0;y<c.height;y+=64){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(c.width,y);ctx.stroke();}
+    hexs.forEach(h=>hex(h.x,h.y,h.s,h.a));
+    pts.forEach(p=>{
+      p.x+=p.vx;p.y+=p.vy;
+      if(p.x<0)p.x=c.width;if(p.x>c.width)p.x=0;
+      if(p.y<0)p.y=c.height;if(p.y>c.height)p.y=0;
+      ctx.beginPath();ctx.arc(p.x,p.y,p.r,0,Math.PI*2);
+      ctx.fillStyle=`rgba(0,200,240,${p.a})`;ctx.fill();
+    });
+    requestAnimationFrame(frame);
+  }
+  frame();
+})();
+
+// ══════════════════════════════════════════════════
+// SVG CONNECTIONS + PARTICLES
+// ══════════════════════════════════════════════════
+const CONNS=[
+  ['brain','nSIEM'],['brain','nSOAR'],['brain','nL1'],['brain','nL2'],
+  ['brain','nTI'],['brain','nNDR'],['brain','nUEBA'],['brain','nIR'],
+  ['nSIEM','nL1'],['nSOAR','nL2'],['nL1','nL2'],['nTI','nSIEM'],
+  ['nNDR','nSIEM'],['nUEBA','nL2'],['nL2','nIR'],
+];
+
+function getCenter(id){
+  const el=document.getElementById(id);
+  const stage=document.getElementById('stage');
+  const sr=stage.getBoundingClientRect();
+  const er=el.getBoundingClientRect();
+  return{x:er.left-sr.left+er.width/2,y:er.top-sr.top+er.height/2};
+}
+
+function drawConns(){
+  if(isMobile())return;
+  const svg=document.getElementById('svg');
+  svg.innerHTML='<defs><linearGradient id="lg"><stop offset="0%" stop-color="#00c8f0" stop-opacity=".03"/><stop offset="50%" stop-color="#00c8f0" stop-opacity=".22"/><stop offset="100%" stop-color="#00c8f0" stop-opacity=".03"/></linearGradient></defs>';
+  CONNS.forEach(([a,b])=>{
+    try{
+      const pa=getCenter(a),pb=getCenter(b);
+      const mx=(pa.x+pb.x)/2,my=(pa.y+pb.y)/2;
+      const path=document.createElementNS('http://www.w3.org/2000/svg','path');
+      path.setAttribute('d',`M${pa.x} ${pa.y} Q${(pa.x+mx)/2} ${pa.y} ${mx} ${my} Q${(mx+pb.x)/2} ${pb.y} ${pb.x} ${pb.y}`);
+      path.setAttribute('stroke','url(#lg)');path.setAttribute('stroke-width','1');path.setAttribute('fill','none');
+      svg.appendChild(path);
+    }catch(e){}
+  });
+}
+
+function spawnParticle(){
+  if(isMobile())return;
+  const svg=document.getElementById('svg');
+  const[a,b]=CONNS[Math.floor(Math.random()*CONNS.length)];
+  const rev=Math.random()>.5;const[s,e]=rev?[b,a]:[a,b];
+  try{
+    const pa=getCenter(s),pb=getCenter(e);
+    const mx=(pa.x+pb.x)/2,my=(pa.y+pb.y)/2;
+    const c=document.createElementNS('http://www.w3.org/2000/svg','circle');
+    const col=S.attacking?'#ff1e3c':(Math.random()>.8?'#00ffd0':'#00c8f0');
+    c.setAttribute('r',S.attacking?'3':'2');c.setAttribute('fill',col);c.setAttribute('opacity','.85');
+    const am=document.createElementNS('http://www.w3.org/2000/svg','animateMotion');
+    am.setAttribute('path',`M${pa.x} ${pa.y} Q${(pa.x+mx)/2} ${pa.y} ${mx} ${my} Q${(mx+pb.x)/2} ${pb.y} ${pb.x} ${pb.y}`);
+    am.setAttribute('dur',`${(1.4+Math.random()*1.8).toFixed(2)}s`);am.setAttribute('repeatCount','1');am.setAttribute('fill','freeze');
+    c.appendChild(am);svg.appendChild(c);
+    am.addEventListener('endEvent',()=>c.remove());
+  }catch(e){}
+}
+
+setInterval(()=>{for(let i=0;i<(S.attacking?5:1);i++)spawnParticle();},300);
+
+// ══════════════════════════════════════════════════
+// MITRE
+// ══════════════════════════════════════════════════
+(function initMitre(){
+  const tacs=document.getElementById('mtacs'),grid=document.getElementById('mgrid');
+  MITRE_TACS.forEach((t,i)=>{
+    const d=document.createElement('div');d.className='mtac';d.textContent=t;tacs.appendChild(d);
+    for(let r=0;r<4;r++){const c=document.createElement('div');c.className='mc';c.id=`mc${i}-${r}`;grid.appendChild(c);}
+  });
+})();
+
+function litMitre(ti){
+  for(let r=0;r<4;r++){
+    const c=document.getElementById(`mc${ti}-${r}`);
+    if(c&&!c.classList.contains('hot')){
+      c.classList.add('hot');
+      setTimeout(()=>{c.classList.remove('hot');c.classList.add('seen');},7000);
+      break;
+    }
+  }
+}
+
+// ══════════════════════════════════════════════════
+// KILL CHAIN
+// ══════════════════════════════════════════════════
+(function initKC(){
+  const s=document.getElementById('kcstages');
+  KC.forEach((k,i)=>{const d=document.createElement('div');d.className='kcs';d.id=`kcs${i}`;d.textContent=k;s.appendChild(d);});
+})();
+
+function litKC(i){
+  document.getElementById('kc').classList.add('on');
+  if(i>0){const p=document.getElementById(`kcs${i-1}`);if(p){p.classList.remove('go');p.classList.add('done');}}
+  const el=document.getElementById(`kcs${i}`);if(el)el.classList.add('go');
+}
+function resetKC(){KC.forEach((_,i)=>{const el=document.getElementById(`kcs${i}`);if(el)el.classList.remove('go','done');});document.getElementById('kc').classList.remove('on');}
+
+// ══════════════════════════════════════════════════
+// RISK GAUGE
+// ══════════════════════════════════════════════════
+function setRisk(score){
+  S.risk=score;
+  const circ=339,pct=score/100;
+  document.getElementById('riskArc').style.strokeDashoffset=circ-(circ*pct);
+  document.getElementById('riskNum').textContent=score;
+  const lbl=document.getElementById('riskLbl');
+  const num=document.getElementById('riskNum');
+  if(score<25){lbl.textContent='LOW';lbl.setAttribute('fill','#00ff88');num.setAttribute('fill','#00ffd0');}
+  else if(score<50){lbl.textContent='MEDIUM';lbl.setAttribute('fill','#ffd000');num.setAttribute('fill','#ffd000');}
+  else if(score<75){lbl.textContent='HIGH';lbl.setAttribute('fill','#ff7700');num.setAttribute('fill','#ff7700');}
+  else{lbl.textContent='CRITICAL';lbl.setAttribute('fill','#ff1e3c');num.setAttribute('fill','#ff1e3c');}
+}
+
+// ══════════════════════════════════════════════════
+// THREAT METER
+// ══════════════════════════════════════════════════
+function setThreat(lvl){
+  const fill=document.getElementById('thrFill'),val=document.getElementById('thrVal');
+  fill.style.width=lvl+'%';
+  if(lvl<25){fill.style.background='#00ff88';val.style.color='#00ff88';val.textContent='LOW';}
+  else if(lvl<50){fill.style.background='linear-gradient(90deg,#ffd000,#ff7700)';val.style.color='#ffd000';val.textContent='MEDIUM';}
+  else if(lvl<75){fill.style.background='linear-gradient(90deg,#ff7700,#ff4400)';val.style.color='#ff7700';val.textContent='HIGH';}
+  else{fill.style.background='linear-gradient(90deg,#ff1e3c,#ff0055)';val.style.color='#ff1e3c';val.textContent='CRITICAL';}
+  setRisk(Math.round(lvl*.88+5));
+}
+
+// ══════════════════════════════════════════════════
+// NODE FLASH
+// ══════════════════════════════════════════════════
+function flashNode(id,type='alert',dur=5000){
+  const n=document.getElementById(id);if(!n)return;
+  n.classList.remove('alert','busy','ok');n.classList.add(type);
+  const dot=n.querySelector('.ndot');if(dot)dot.className='ndot '+(type==='alert'?'red':type==='busy'?'yellow':'');
+  const badge=n.querySelector('.nbadge');
+  if(badge&&type==='alert'){badge.textContent=(parseInt(badge.textContent)||0)+1;badge.classList.add('on');}
+  setTimeout(()=>{n.classList.remove(type);if(dot)dot.className='ndot';if(badge)badge.classList.remove('on');},dur);
+}
+
+// ══════════════════════════════════════════════════
+// LOG FEED
+// ══════════════════════════════════════════════════
+function addLog(type){
+  const arr=LOGS[type]||LOGS.n;
+  const msg=arr[Math.floor(Math.random()*arr.length)];
+  const ts=new Date().toTimeString().slice(0,8);
+  const lines=document.getElementById('loglines');
+  const d=document.createElement('div');
+  d.className='ll '+(type==='w'?'w':type==='c'?'c':type==='i'?'i':'');
+  d.textContent=`${ts} ${msg}`;
+  lines.prepend(d);
+  while(lines.children.length>22)lines.lastChild.remove();
+}
+
+setInterval(()=>{
+  const r=Math.random();
+  addLog(S.attacking?(r<.55?'c':r<.8?'w':'i'):(r<.04?'w':r<.015?'c':'n'));
+},S.attacking?350:950);
+
+for(let i=0;i<10;i++)setTimeout(()=>addLog('n'),i*80);
+
+// ══════════════════════════════════════════════════
+// L1 LIVE TRIAGE QUEUE
+// ══════════════════════════════════════════════════
+let l1alertIdx=0;
+function runL1Queue(){
+  const queue=document.getElementById('l1queue');
+  const alert=L1_ALERTS[l1alertIdx%L1_ALERTS.length];
+  l1alertIdx++;
+
+  // Keep max 4 items
+  while(queue.children.length>=4)queue.lastChild.remove();
+
+  const sevMap={c:'CRIT',h:'HIGH',m:'MED',l:'LOW'};
+  const actMap={esc:{cls:'esc',lbl:'ESCALATE'},dis:{cls:'dis',lbl:'DISMISS'},rev:{cls:'rev',lbl:'REVIEW'}};
+  const act=actMap[alert.act];
+
+  const item=document.createElement('div');
+  item.className='l1item';
+  item.innerHTML=`<span class="l1sev ${alert.sev}">${sevMap[alert.sev]}</span>
+    <span class="l1msg">${alert.msg}</span>
+    <span class="l1act ${act.cls}" onclick="l1Action(this,'${alert.act}')">${act.lbl}</span>`;
+  queue.prepend(item);
+}
+
+function l1Action(btn,type){
+  const item=btn.closest('.l1item');
+  S.l1triaged++;
+  document.getElementById('l1triaged').textContent=S.l1triaged;
+  if(type==='esc'){
+    S.l1escalated++;
+    document.getElementById('l1escalated').textContent=S.l1escalated;
+    // Show escalation animation
+    const r=item.getBoundingClientRect();
+    const badge=document.createElement('div');
+    badge.className='escalate-badge';
+    badge.style.left=r.left+'px';badge.style.top=r.top+'px';
+    badge.textContent='⮕ ESCALATED → Darius Vael (L2)';
+    document.body.appendChild(badge);
+    setTimeout(()=>badge.remove(),2100);
+    flashNode('nL2','busy',3000);
+  } else if(type==='dis'){
+    S.l1falsepos++;
+    document.getElementById('l1falsepos').textContent=S.l1falsepos;
+  }
+  item.style.opacity='0';item.style.transition='opacity .3s';
+  setTimeout(()=>item.remove(),320);
+}
+
+// Continuously feed L1 queue
+setInterval(()=>{
+  if(S.mode==='story'||S.attacking){
+    runL1Queue();
+    // update false positive bar
+    const fp=Math.min(99,94+Math.floor(Math.random()*4));
+    document.getElementById('fpFill').style.width=fp+'%';
+  }
+},S.attacking?1400:2800);
+
+// Seed initial queue
+setTimeout(()=>{for(let i=0;i<3;i++)setTimeout(runL1Queue,i*400);},800);
+
+// ══════════════════════════════════════════════════
+// CLOCK + STATS
+// ══════════════════════════════════════════════════
+setInterval(()=>{
+  document.getElementById('clock').textContent=new Date().toTimeString().slice(0,8)+' UTC';
+},1000);
+
+setInterval(()=>{
+  S.evts+=Math.floor((Math.random()-.5)*160);
+  S.blk+=Math.floor(Math.random()*3);
+  document.getElementById('sevt').textContent=S.evts.toLocaleString();
+  document.getElementById('sblk').textContent=S.blk.toLocaleString();
+  document.getElementById('salt').textContent=S.alts;
+},2200);
+
+// ══════════════════════════════════════════════════
+// TIMELINE
+// ══════════════════════════════════════════════════
+function setTL(pct,phase,secs){
+  document.getElementById('tlprog').style.width=pct+'%';
+  document.getElementById('tlknob').style.left=pct+'%';
+  document.getElementById('tlphase').textContent=phase;
+  const m=String(Math.floor(secs/60)).padStart(2,'0');
+  document.getElementById('tlsec').textContent=`${m}:${String(secs%60).padStart(2,'0')}`;
+}
+
+// ══════════════════════════════════════════════════
+// FX
+// ══════════════════════════════════════════════════
+function shockwave(){
+  const el=document.getElementById('shock');
+  el.classList.remove('bang');void el.offsetWidth;el.classList.add('bang');
+  setTimeout(()=>el.classList.remove('bang'),1100);
+}
+
+function narrate(txt,col='#ff1e3c'){
+  const el=document.getElementById('nar');
+  el.style.color=col;el.style.textShadow=`0 0 28px ${col}88`;
+  el.textContent=txt;el.classList.remove('show');void el.offsetWidth;el.classList.add('show');
+}
+
+// ══════════════════════════════════════════════════
+// ATTACK
+// ══════════════════════════════════════════════════
+const ATK_PHASES=[
+  {t:0,    thr:20,phase:'RECON DETECTED',      nar:'⚠ GHOST MERIDIAN RECON DETECTED',    node:'nTI',  lit:true, kc:0,mitre:0},
+  {t:2800, thr:38,phase:'PHISHING DELIVERED',  nar:'☣ PHISHING → zara.whitfield',        node:'nSIEM',lit:true, kc:1,mitre:2},
+  {t:5500, thr:55,phase:'PAYLOAD EXECUTING',   nar:'💀 svch0st.exe EXECUTING',           node:'nNDR', lit:true, kc:2,mitre:3},
+  {t:8000, thr:70,phase:'LATERAL MOVEMENT',    nar:'🔴 LATERAL MOVE → DC01-CORP',        node:'nUEBA',lit:true, kc:3,mitre:9},
+  {t:10800,thr:88,phase:'RANSOMWARE ACTIVE',   nar:'🔴 LOCKBIT v3 — 847 FILES/SEC',      node:'nL1',  lit:true, kc:4,mitre:4},
+  {t:13200,thr:90,phase:'AI RESPONDING',       nar:'🧠 POWERCORTEX ENGAGING DEFENSES',   node:'nSOAR',lit:false,kc:5,mitre:10},
+  {t:15800,thr:62,phase:'ISOLATING',           nar:'⚡ WIN-ZWHITFIELD-L ISOLATED',       node:'nL2',  lit:false,kc:6,mitre:null},
+  {t:18500,thr:28,phase:'INVESTIGATING',       nar:'🔬 DARIUS VAEL — DEEP FORENSICS',    node:'nIR',  lit:false,kc:null,mitre:null},
+  {t:22000,thr:8, phase:'RESOLVED',            nar:'✅ THREAT NEUTRALISED — POWERCORTEX',node:null,   lit:false,kc:null,mitre:null,resolve:true},
+];
+
+function launchAttack(){
+  if(S.attacking)return;
+  S.attacking=true;
+  S.paused=false;
+  clearTimeout(storyTimer);
+  document.getElementById('batk').disabled=true;
+  document.getElementById('batk').textContent='⚠ ATTACK IN PROGRESS';
+  document.getElementById('bstory').textContent='▶ STORY';
+  document.getElementById('bstory').classList.remove('on');
+  shockwave();
+  narrate('☣ INTRUSION DETECTED — POWERCORTEX AI ENGAGING');
+  document.querySelectorAll('.src').forEach(s=>s.classList.add('lit'));
+
+  const total=ATK_PHASES[ATK_PHASES.length-1].t+3500;
+  ATK_PHASES.forEach(ph=>{
+    setTimeout(()=>{
+      setThreat(ph.thr);
+      setTL(Math.round(ph.t/total*100),ph.phase,Math.round(ph.t/1000));
+      if(ph.nar)narrate(ph.nar,ph.thr>60?'#ff1e3c':ph.thr>30?'#ff7700':'#00ff88');
+      if(ph.node)flashNode(ph.node,ph.lit?'alert':'busy',5500);
+      if(ph.kc!=null)litKC(ph.kc);
+      if(ph.mitre!=null)litMitre(ph.mitre);
+      S.alts=ph.lit?Math.round(ph.thr/11):Math.max(0,S.alts-1);
+      // During attack, speed up L1 queue
+      if(ph.lit)runL1Queue();
+      if(ph.resolve){
+        setTimeout(()=>{
+          S.attacking=false;S.alts=0;
+          document.querySelectorAll('.src').forEach(s=>s.classList.remove('lit'));
+          document.querySelectorAll('.node').forEach(n=>n.classList.remove('alert','busy'));
+          setTimeout(resetKC,4000);
+          setTL(100,'RESOLVED',Math.round(total/1000));
+          const btn=document.getElementById('batk');
+          btn.disabled=false;btn.textContent='☣ SIMULATE ATTACK';
+          if(S.mode==='story'){
+            setTimeout(()=>runStoryBeat(), 3000);
+            document.getElementById('bstory').textContent='⏸ STORY';
+            document.getElementById('bstory').classList.add('on');
+          }
+        },1500);
+      }
+    },ph.t);
+  });
+}
+
+// ══════════════════════════════════════════════════
+// STORY MODE — narrated idle sequence
+// ══════════════════════════════════════════════════
+const STORY_BEATS = [
+  {node:'nTI',   nar:'🌐 THREAT INTEL SCANNING DARK WEB FEEDS',  col:'#00c8f0'},
+  {node:'nSIEM', nar:'⬡ SIEM CORRELATING 14,281 EVENTS/SEC',     col:'#00c8f0'},
+  {node:'nNDR',  nar:'📡 NDR ANALYSING EAST-WEST TRAFFIC',       col:'#00c8f0'},
+  {node:'nUEBA', nar:'👤 UEBA MONITORING 1,204 USER BASELINES',  col:'#00ffd0'},
+  {node:'nL1',   nar:'👁 TARIQ OSMAN — AI TRIAGE ACTIVE',        col:'#00ffd0'},
+  {node:'brain', nar:'🧠 POWERCORTEX — ALL SYSTEMS NOMINAL',     col:'#00ffd0'},
+  {node:'nSOAR', nar:'⚡ SOAR — 238 PLAYBOOKS ARMED & READY',    col:'#00c8f0'},
+  {node:'nL2',   nar:'🔬 DARIUS VAEL — INVESTIGATING ANOMALIES', col:'#00ffd0'},
+  {node:'nIR',   nar:'🛡 INCIDENT RESPONSE STANDBY — GREEN',     col:'#00ff88'},
+];
+
+let storyIdx = 0;
+let storyTimer = null;
+S.paused = false;
+
+function runStoryBeat() {
+  if (S.mode !== 'story' || S.attacking || S.paused) return;
+  const beat = STORY_BEATS[storyIdx % STORY_BEATS.length];
+  storyIdx++;
+  flashNode(beat.node, 'busy', 2800);
+  narrate(beat.nar, beat.col);
+  storyTimer = setTimeout(runStoryBeat, 3200);
+}
+
+// Single button: if not in story → enter story+play
+//                if in story+playing → pause
+//                if in story+paused  → resume
+function storyAction() {
+  const btn = document.getElementById('bstory');
+  if (S.mode !== 'story') {
+    // switch into story mode and start playing
+    setMode('story');
+    return;
+  }
+  // already in story — toggle pause/play
+  S.paused = !S.paused;
+  if (S.paused) {
+    clearTimeout(storyTimer);
+    document.querySelectorAll('.node.busy').forEach(n => n.classList.remove('busy'));
+    btn.textContent = '▶ STORY';
+    btn.classList.remove('on');
+  } else {
+    btn.textContent = '⏸ STORY';
+    btn.classList.add('on');
+    runStoryBeat();
+  }
+}
+
+function setMode(m) {
+  S.mode = m;
+  S.paused = false;
+  const storyBtn = document.getElementById('bstory');
+  document.getElementById('bexplore').classList.toggle('on', m === 'explore');
+  if (m === 'story') {
+    storyBtn.textContent = '⏸ STORY';
+    storyBtn.classList.add('on');
+    clearTimeout(storyTimer);
+    storyIdx = 0;
+    runStoryBeat();
+  } else {
+    storyBtn.textContent = '▶ STORY';
+    storyBtn.classList.remove('on');
+    clearTimeout(storyTimer);
+    document.querySelectorAll('.node.busy').forEach(n => n.classList.remove('busy'));
+  }
+}
+
+// ══════════════════════════════════════════════════
+// PANELS
+// ══════════════════════════════════════════════════
+function openPanel(key){
+  const d=PANELS[key];if(!d)return;
+  document.getElementById('pcontent').innerHTML=`<div class="ptitle">${d.title}</div><div class="psub">${d.sub}</div>${d.html}`;
+  document.getElementById('overlay').classList.add('on');
+  document.getElementById('panel').classList.add('on');
+}
+function closePanel(){
+  document.getElementById('overlay').classList.remove('on');
+  document.getElementById('panel').classList.remove('on');
+}
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closePanel();});
+
+// ══════════════════════════════════════════════════
+// COPILOT
+// ══════════════════════════════════════════════════
+function toggleCop(){
+  S.copOpen=!S.copOpen;
+  document.getElementById('copbody').classList.toggle('hide',!S.copOpen);
+  document.getElementById('ctog').textContent=S.copOpen?'▲':'▼';
+}
+
+const KEYWORDS={
+  threat:['threat','attack','lockbit','ransomware','apt','actor','ghost','meridian'],
+  siem:['siem','event','log','alert','correlat'],
+  soar:['soar','playbook','automat','respon','isolat'],
+  ueba:['ueba','user','behavior','insider','anomal','zara','whitfield'],
+  ndr:['ndr','network','traffic','lateral','east'],
+  l1:['l1','tariq','osman','triage','tier 1','tier1'],
+  l2:['l2','darius','vael','investigat','forensic','tier 2'],
+  ti:['intel','ioc','threat intel','kenji','actor','dark web'],
+  risk:['risk','score','critical','high','level'],
+  power:['power','cortex','powercortex','division','consultancy'],
+};
+
+function pickResponse(txt){
+  const t=txt.toLowerCase();
+  for(const[k,words]of Object.entries(KEYWORDS)){
+    if(words.some(w=>t.includes(w))){
+      const atk=S.attacking;
+      if(k==='threat'||k==='l1'||k==='l2')return atk?COPILOT_RESPONSES.attack[Math.floor(Math.random()*4)]:COPILOT_RESPONSES.default[0];
+      if(k==='siem')return COPILOT_RESPONSES.default[1];
+      if(k==='ueba')return COPILOT_RESPONSES.default[2];
+      if(k==='soar')return COPILOT_RESPONSES.default[3];
+      if(k==='ndr')return COPILOT_RESPONSES.default[4];
+      if(k==='risk')return`Current risk score: ${S.risk}/100 — ${S.risk<25?'LOW. All systems nominal.':S.risk<50?'MEDIUM. Monitoring elevated activity.':S.risk<75?'HIGH. Active containment in progress.':'CRITICAL. Full incident response active. Nadia Ferrante and Reuben Achike have been notified.'}`;
+      if(k==='power')return'PowerCortex is Power Consultancy\'s AI Security Operations division. We run 7 ML models across 9 integrated systems, enabling Tariq Osman (L1) and Darius Vael (L2) to respond to threats 40× faster than traditional SOC workflows.';
+      if(k==='ti')return COPILOT_RESPONSES.default[0];
+    }
+  }
+  return S.attacking?COPILOT_RESPONSES.attack[Math.floor(Math.random()*4)]:COPILOT_RESPONSES.default[Math.floor(Math.random()*5)];
+}
+
+function typeWrite(el,text,speed=15){
+  el.textContent='';let i=0;
+  const iv=setInterval(()=>{el.textContent+=text[i++];if(i>=text.length)clearInterval(iv);},speed);
+}
+
+function sendCop(){
+  const inp=document.getElementById('cinput');
+  const msgs=document.getElementById('copmsgs');
+  const txt=inp.value.trim();if(!txt)return;
+  inp.value='';
+  const u=document.createElement('div');u.className='cm usr';u.textContent=txt;msgs.appendChild(u);
+  const r=document.createElement('div');r.className='cm ai';r.textContent='…';msgs.appendChild(r);
+  msgs.scrollTop=msgs.scrollHeight;
+  setTimeout(()=>{typeWrite(r,pickResponse(txt));msgs.scrollTop=msgs.scrollHeight;},550+Math.random()*550);
+}
+
+document.getElementById('cinput').addEventListener('keydown',e=>{if(e.key==='Enter')sendCop();});
+
+// ══════════════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════════════
+// ══════════════════════════════════════════════════
+// NEURAL NET BRAIN CANVAS
+// ══════════════════════════════════════════════════
+(function initBrain(){
+  const canvas = document.getElementById('brainCanvas');
+  const ctx = canvas.getContext('2d');
+  const SIZE = 130;
+  canvas.width = SIZE; canvas.height = SIZE;
+  const CX = SIZE/2, CY = SIZE/2, R = SIZE/2 - 2;
+
+  // Neural net layers: input(4), hidden1(5), hidden2(4), output(3)
+  const LAYERS = [
+    [{x:0.18,y:0.22},{x:0.18,y:0.38},{x:0.18,y:0.54},{x:0.18,y:0.70},{x:0.18,y:0.86}],
+    [{x:0.38,y:0.18},{x:0.38,y:0.32},{x:0.38,y:0.46},{x:0.38,y:0.60},{x:0.38,y:0.74},{x:0.38,y:0.88}],
+    [{x:0.58,y:0.22},{x:0.58,y:0.38},{x:0.58,y:0.54},{x:0.58,y:0.70},{x:0.58,y:0.86}],
+    [{x:0.78,y:0.30},{x:0.78,y:0.50},{x:0.78,y:0.70},{x:0.78,y:0.88}],
+  ];
+
+  // Precompute nodes in pixel space, clipped to circle
+  const nodes = LAYERS.map(layer =>
+    layer.map(n => {
+      const px = n.x * SIZE, py = n.y * SIZE;
+      const dx = px - CX, dy = py - CY;
+      const dist = Math.sqrt(dx*dx + dy*dy);
+      if(dist > R - 6){ const scale = (R-6)/dist; return {x: CX+dx*scale, y: CY+dy*scale}; }
+      return {x: px, y: py};
+    })
+  );
+
+  // Edges
+  const edges = [];
+  for(let l=0;l<nodes.length-1;l++){
+    nodes[l].forEach((a,ai)=>{
+      nodes[l+1].forEach((b,bi)=>{
+        edges.push({ax:a.x,ay:a.y,bx:b.x,by:b.y,
+          w:Math.random()*.7+.15,
+          phase:Math.random()*Math.PI*2,
+          speed:0.6+Math.random()*1.2});
+      });
+    });
+  }
+
+  // Pulses travelling along edges
+  const pulses = [];
+  function spawnPulse(){
+    const e = edges[Math.floor(Math.random()*edges.length)];
+    const isAtk = S.attacking;
+    pulses.push({e, t:0, speed:0.012+Math.random()*.018,
+      col: isAtk ? `rgba(255,30,60,0.9)` : (Math.random()>.7?`rgba(0,255,208,0.9)`:`rgba(0,200,240,0.85)`)});
+  }
+  setInterval(spawnPulse, 120);
+
+  // Node glow phases
+  const nodePhases = nodes.flat().map(()=>Math.random()*Math.PI*2);
+  let tick = 0;
+
+  function drawFrame(){
+    ctx.clearRect(0,0,SIZE,SIZE);
+
+    // Clip to circle
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(CX,CY,R,0,Math.PI*2);
+    ctx.clip();
+
+    // Subtle radial bg
+    const bg = ctx.createRadialGradient(CX,CY,0,CX,CY,R);
+    bg.addColorStop(0,'rgba(0,30,55,0.85)');
+    bg.addColorStop(1,'rgba(1,8,18,0.95)');
+    ctx.fillStyle = bg;
+    ctx.fillRect(0,0,SIZE,SIZE);
+
+    // Draw edges (synapses)
+    edges.forEach(e=>{
+      const pulse = 0.12 + 0.08*Math.sin(tick*e.speed + e.phase);
+      ctx.beginPath();
+      ctx.moveTo(e.ax,e.ay);
+      ctx.lineTo(e.bx,e.by);
+      ctx.strokeStyle = `rgba(0,200,240,${pulse})`;
+      ctx.lineWidth = 0.5;
+      ctx.stroke();
+    });
+
+    // Draw travelling pulses
+    for(let i=pulses.length-1;i>=0;i--){
+      const p=pulses[i];
+      p.t += p.speed;
+      if(p.t>=1){pulses.splice(i,1);continue;}
+      const px = p.e.ax + (p.e.bx-p.e.ax)*p.t;
+      const py = p.e.ay + (p.e.by-p.e.ay)*p.t;
+      ctx.beginPath();
+      ctx.arc(px,py,1.6,0,Math.PI*2);
+      ctx.fillStyle = p.col;
+      ctx.fill();
+      // tail
+      const px2 = p.e.ax + (p.e.bx-p.e.ax)*Math.max(0,p.t-0.08);
+      const py2 = p.e.ay + (p.e.by-p.e.ay)*Math.max(0,p.t-0.08);
+      ctx.beginPath();
+      ctx.moveTo(px,py); ctx.lineTo(px2,py2);
+      ctx.strokeStyle = p.col.replace('0.9','0.3').replace('0.85','0.25');
+      ctx.lineWidth = 1;
+      ctx.stroke();
+    }
+
+    // Draw nodes (neurons)
+    nodes.flat().forEach((n,i)=>{
+      const glow = 0.5 + 0.5*Math.sin(tick*0.04 + nodePhases[i]);
+      const isAtk = S.attacking;
+      const col = isAtk
+        ? `rgba(255,${Math.floor(60+glow*80)},${Math.floor(60*glow)},${0.7+glow*0.3})`
+        : `rgba(${Math.floor(glow*80)},${Math.floor(180+glow*75)},${Math.floor(220+glow*35)},${0.65+glow*0.35})`;
+
+      // Outer glow ring
+      const grad = ctx.createRadialGradient(n.x,n.y,0,n.x,n.y,6+glow*3);
+      grad.addColorStop(0, isAtk?`rgba(255,30,60,${0.35*glow})`:`rgba(0,200,240,${0.3*glow})`);
+      grad.addColorStop(1,'rgba(0,0,0,0)');
+      ctx.beginPath(); ctx.arc(n.x,n.y,7+glow*3,0,Math.PI*2);
+      ctx.fillStyle=grad; ctx.fill();
+
+      // Node core
+      ctx.beginPath(); ctx.arc(n.x,n.y,2.2,0,Math.PI*2);
+      ctx.fillStyle = col; ctx.fill();
+    });
+
+    ctx.restore();
+
+    // Border ring
+    ctx.beginPath(); ctx.arc(CX,CY,R,0,Math.PI*2);
+    const atkPulse = S.attacking ? 0.6+0.4*Math.sin(tick*0.15) : 0.28;
+    ctx.strokeStyle = S.attacking
+      ? `rgba(255,30,60,${atkPulse})`
+      : `rgba(0,200,240,${0.22+0.08*Math.sin(tick*0.03)})`;
+    ctx.lineWidth = S.attacking ? 1.5 : 1;
+    ctx.stroke();
+
+    tick++;
+    requestAnimationFrame(drawFrame);
+  }
+  drawFrame();
+})();
+
+window.addEventListener('load',()=>{
+  setTimeout(drawConns,120);
+  window.addEventListener('resize',()=>setTimeout(drawConns,60));
+  setThreat(8);setTL(0,'MONITORING',0);
+  setTimeout(()=>{
+    setMode('story');
+  }, 1200);
+});
+
+</script>
+</body>
+</html>
